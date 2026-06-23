@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="快记" />
+  <meta name="theme-color" content="#ffffff" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <title>快记 · AI 智能记账</title>
+  <link rel="stylesheet" href="style.css?v=5" />
+</head>
+<body>
+
+  <div class="app-container">
+
+    <!-- 顶部标题栏 -->
+    <header class="app-header">
+      <h1 class="app-title">快记</h1>
+      <div class="header-actions">
+        <button class="btn-icon" id="btn-stats" title="统计">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </button>
+        <button class="btn-icon" id="btn-clear-all" title="清空全部">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- 主输入区 -->
+    <section class="input-section">
+      <div class="input-card">
+        <textarea
+          id="input-text"
+          class="main-input"
+          placeholder="说一句话记账，比如&#10;「昨天中午吃火锅花了120」"
+          rows="3"
+          autofocus
+        ></textarea>
+        <button class="btn-record" id="btn-submit">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          记一笔
+        </button>
+        <div class="btn-hint">点击提交 · 长按说话</div>
+      </div>
+
+      <!-- AI Key 配置入口 -->
+      <div id="sync-status" style="text-align:center;font-size:12px;color:#aeaeb2;margin-top:6px;height:16px;"></div>
+
+      <button class="btn-config" id="btn-config">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+        配置 AI 接口
+      </button>
+    </section>
+
+    <!-- Toast 提示 -->
+    <div class="toast" id="toast"></div>
+
+    <!-- 统计卡片 -->
+    <section class="stats-section" id="stats-section" style="display:none">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value" id="stat-today">¥0</div>
+          <div class="stat-label">今日支出</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-month">¥0</div>
+          <div class="stat-label">本月支出</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-count">0</div>
+          <div class="stat-label">总笔数</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 历史账单 -->
+    <section class="list-section">
+      <div class="list-header">
+        <span class="list-title">账单记录</span>
+        <span class="list-count" id="list-count">0 笔</span>
+      </div>
+      <div class="bill-list" id="bill-list">
+        <div class="empty-state">
+          <div class="empty-icon">📝</div>
+          <div class="empty-text">还没有记录，说一句话开始记账吧</div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- AI Key 配置弹窗 -->
+  <div class="modal-overlay" id="modal-config" style="display:none">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>配置 AI 接口</h3>
+        <button class="btn-icon" id="btn-close-config">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>API 服务商</label>
+          <select id="config-provider">
+            <option value="deepseek">DeepSeek（推荐，便宜）</option>
+            <option value="openai">OpenAI（GPT-4o）</option>
+            <option value="custom">自定义接口</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>API Key（记账用）</label>
+          <input type="password" id="config-apikey" placeholder="粘贴你的 API Key" />
+        </div>
+        <div class="form-group">
+          <label>语音 API Key（留空则复用上方）</label>
+          <input type="password" id="config-voice-apikey" placeholder="支持 OpenAI Whisper 中转 API" />
+        </div>
+        <div class="form-group">
+          <label>语音服务商</label>
+          <select id="config-voice-provider">
+            <option value="siliconflow">硅基流动（推荐，国内快）</option>
+            <option value="openai">OpenAI 官方</option>
+            <option value="custom">自定义</option>
+          </select>
+        </div>
+        <div class="form-group" id="group-voice-custom-url" style="display:none">
+          <label>语音中转 Base URL</label>
+          <input type="text" id="config-voice-base-url" placeholder="https://api.example.com/v1" />
+        </div>
+        <div class="form-group" id="group-voice-custom-model" style="display:none">
+          <label>语音模型</label>
+          <input type="text" id="config-voice-model" placeholder="whisper-1" />
+        </div>
+        <div class="form-group" id="group-custom-url" style="display:none">
+          <label>自定义 Base URL</label>
+          <input type="text" id="config-base-url" placeholder="https://api.example.com/v1" />
+        </div>
+        <div class="form-group" id="group-custom-model" style="display:none">
+          <label>模型名称</label>
+          <input type="text" id="config-model" placeholder="例如：gpt-4o-mini" />
+        </div>
+        <div class="config-note">
+          API Key 仅保存在本机浏览器中，不会上传任何服务器。语音识别需要支持 Whisper API 的接口。
+        </div>
+      </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="btn-cancel-config">取消</button>
+        <button class="btn-primary" id="btn-save-config">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 删除确认弹窗 -->
+  <div class="modal-overlay" id="modal-delete" style="display:none">
+    <div class="modal-card modal-sm">
+      <div class="modal-header">
+        <h3>删除这条记录？</h3>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="btn-cancel-delete">取消</button>
+        <button class="btn-danger" id="btn-confirm-delete">删除</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 语音输入浮层 -->
+  <div class="voice-overlay" id="voice-overlay" hidden>
+    <div class="voice-cancel-zone" id="voice-cancel-zone">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+      <span>松开取消</span>
+    </div>
+    <div class="voice-panel">
+      <div class="voice-waves" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+      <p class="voice-preview" id="voice-preview"></p>
+      <p class="voice-hint" id="voice-hint">松开 转文字</p>
+    </div>
+  </div>
+
+  <script src="app.js?v=5"></script>
+</body>
+</html>
