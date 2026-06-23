@@ -126,7 +126,7 @@ function normalizeConfig(cfg) {
     provider:      cfg.provider      || 'deepseek',
     apiKey:        cfg.apiKey        || '',
     voiceProvider: cfg.voiceProvider || 'siliconflow',
-    voiceApiKey:   cfg.voiceApiKey   || '',
+    voiceApiKey:   cfg.voiceApiKey   || 'sk-orxadpgogtxvapmudgidrlqunecklnrupyidiwucjwsqrqpt',
     voiceBaseUrl:  cfg.voiceBaseUrl  || '',
     voiceModel:    cfg.voiceModel    || '',
     baseUrl:       cfg.baseUrl       || '',
